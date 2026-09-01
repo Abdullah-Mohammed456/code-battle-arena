@@ -4,17 +4,7 @@ export interface TestCase {
   expectedOutput: string;
 }
 
-export interface ExecuteCodeRequest {
-  code: string;
-  testCases: TestCase[];
-}
-
 export type TestResultStatus = "AC" | "WA" | "TLE" | "CE" | "RE";
-// AC: Accepted
-// WA: Wrong Answer
-// TLE: Time Limit Exceeded
-// CE: Compilation Error
-// RE: Runtime Error
 
 export interface TestCaseResult {
   testCaseId: string;
