@@ -27,6 +27,11 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .cache
 *.tsbuildinfo
 
+# transient files written by the execution service into process.cwd()
+temp_solution*.cpp
+temp_exe*
+temp_input*.txt
+
 # IntelliJ based IDEs
 .idea
 

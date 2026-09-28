@@ -5,13 +5,17 @@
   "private": true,
   "scripts": {
     "dev": "bun --hot src/index.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "lint": "eslint",
+    "check-types": "tsc --noEmit"
   },
   "devDependencies": {
+    "@repo/eslint-config": "*",
     "@types/bun": "latest",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^26.4.0",
+    "eslint": "10.9.1",
     "typescript": "^7.0.2"
   },
   "dependencies": {
