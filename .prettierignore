@@ -8,3 +8,5 @@ markdown-files
 *.md
 *.markdown
 docs/
+
+apps/server/src/generated/

@@ -57,3 +57,42 @@ export interface ExecuteCodeResponse {
 }
 
 export { z };
+
+export const userProfileSchema = z.object({
+  id: z.uuid(),
+  handle: z.string(),
+  displayName: z.string(),
+  avatarUrl: z.string().nullable(),
+  rating: z.number().int(),
+  games: z.number().int().nonnegative(),
+  cfHandle: z.string().nullable(),
+  createdAt: z.iso.datetime(),
+});
+export type UserProfile = z.infer<typeof userProfileSchema>;
+export const executeCodeResponseSchema = z
+  .object({
+    overallStatus: z.enum(["AC", "WA", "TLE", "CE", "RE", "MLE", "OLE", "IE"]),
+    passedCount: z.number().int().nonnegative(),
+    totalCount: z.number().int().min(1).max(100),
+    results: z
+      .array(
+        z.object({
+          testCaseId: z.string(),
+          status: z.enum(["AC", "WA", "TLE", "CE", "RE", "MLE", "OLE", "IE"]),
+          actualOutput: z.string().optional(),
+          expectedOutput: z.string(),
+          error: z.string().optional(),
+          executionTimeMs: z.number().nonnegative().optional(),
+        }),
+      )
+      .max(100),
+  })
+  .refine(
+    (value) =>
+      value.results.length === value.totalCount &&
+      value.passedCount ===
+        value.results.filter((item) => item.status === "AC").length &&
+      value.overallStatus ===
+        (value.results.find((item) => item.status !== "AC")?.status ?? "AC"),
+    "Inconsistent execution result",
+  );

@@ -24,7 +24,19 @@
         "RUNNER_IMAGE",
         "WORK_DIR",
         "MAX_CONCURRENT_JOBS",
-        "MAX_QUEUE_SIZE"
+        "MAX_QUEUE_SIZE",
+        "DATABASE_URL",
+        "DATABASE_DIRECT_URL",
+        "CLERK_PUBLISHABLE_KEY",
+        "CLERK_SECRET_KEY",
+        "CLERK_JWT_KEY",
+        "CORS_ORIGINS",
+        "JUDGE_URL",
+        "LOG_LEVEL",
+        "TRUST_PROXY",
+        "RUN_DATABASE_TESTS",
+        "TEST_DATABASE_URL",
+        "JUDGE_TIMEOUT_MS"
       ],
       "cache": false
     },
@@ -41,7 +53,17 @@
         "RUNNER_IMAGE",
         "WORK_DIR",
         "MAX_CONCURRENT_JOBS",
-        "MAX_QUEUE_SIZE"
+        "MAX_QUEUE_SIZE",
+        "DATABASE_URL",
+        "DATABASE_DIRECT_URL",
+        "CLERK_PUBLISHABLE_KEY",
+        "CLERK_SECRET_KEY",
+        "CLERK_JWT_KEY",
+        "CORS_ORIGINS",
+        "JUDGE_URL",
+        "LOG_LEVEL",
+        "TRUST_PROXY",
+        "JUDGE_TIMEOUT_MS"
       ]
     }
   }
