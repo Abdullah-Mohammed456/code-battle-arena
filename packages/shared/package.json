@@ -1,0 +1,27 @@
+{
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "eslint": "10.9.1",
+    "typescript": "7.0.2",
+    "@types/bun": "latest"
+  },
+  "name": "@repo/shared",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "test": "bun test src"
+  },
+  "dependencies": {
+    "zod": "^4.1.0"
+  }
+}

@@ -1,20 +1,30 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
-  "ui": "tui",
+  "ui": "stream",
+  "globalDependencies": ["tsconfig.base.json"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"]
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["dist/**"],
+      "env": ["VITE_API_URL", "VITE_WS_URL"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": ["^build"]
     },
-    "check-types": {
-      "dependsOn": ["^check-types"]
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "env": ["RUN_DOCKER_TESTS"]
     },
     "dev": {
+      "dependsOn": ["^build"],
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "env": ["PORT", "NODE_ENV", "VITE_API_URL", "VITE_WS_URL"]
     }
   }
 }

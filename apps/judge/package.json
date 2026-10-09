@@ -1,0 +1,28 @@
+{
+  "name": "@repo/judge",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun --hot src/index.ts",
+    "start": "bun dist/index.js",
+    "build": "bun build src/index.ts --target=bun --outdir dist",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "test": "bun test src"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@types/bun": "latest",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.4.0",
+    "eslint": "10.9.1",
+    "typescript": "^7.0.2",
+    "@repo/typescript-config": "workspace:*"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "@repo/shared": "workspace:*"
+  }
+}

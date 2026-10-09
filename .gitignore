@@ -31,3 +31,10 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+# Markdown
+
+markdown-files/
+
+.env.*
+!.env.example

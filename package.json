@@ -2,11 +2,15 @@
   "name": "code-battle-arena",
   "private": true,
   "scripts": {
-    "build": "turbo run build",
     "dev": "turbo run dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "check-types": "bun run typecheck",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,md}\"",
-    "check-types": "turbo run check-types"
+    "test": "turbo run test",
+    "test:integration": "RUN_DOCKER_TESTS=1 bun test apps/judge/tests/integration",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "prettier": "3.9.6",
