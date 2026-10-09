@@ -10,9 +10,12 @@ import pino from "pino";
 import { pinoHttp } from "pino-http";
 import { randomUUID } from "node:crypto";
 import { type UserProfile } from "@repo/shared";
+import { problemRouter, adminRouter } from "./problems.js";
+import { importRunner } from "./importers/runner.js";
 import { env, type Env } from "./env.js";
 import { authentication } from "./auth.js";
 import { connectDatabase } from "./db/index.js";
+import type { Database } from "./db/index.js";
 import { userStore } from "./db/queries/users.js";
 import { ApiError } from "./errors.js";
 
@@ -20,6 +23,7 @@ export function createApp(
   options: {
     config?: Env;
     auth?: ReturnType<typeof authentication>;
+    database?: Database;
     getUser?: (id: string) => Promise<UserProfile>;
     readiness?: () => Promise<void>;
   } = {},
@@ -32,8 +36,10 @@ export function createApp(
   });
   const app = express();
   let database: ReturnType<typeof connectDatabase> | undefined;
-  const connection = () => (database ??= connectDatabase(config.DATABASE_URL));
-  app.locals.shutdown = async () => database?.$disconnect();
+  const connection = () => options.database ?? (database ??= connectDatabase(config.DATABASE_URL));
+  let importer: ReturnType<typeof importRunner> | undefined;
+  const imports = () => (importer ??= importRunner(connection()));
+  app.locals.shutdown = async () => { await importer?.wait(); await database?.$disconnect(); };
   app.disable("x-powered-by");
   app.set("trust proxy", config.TRUST_PROXY);
   app.use(
@@ -101,7 +107,9 @@ export function createApp(
     }),
   );
   app.use(express.json({ limit: "128kb" }));
+  app.use("/api/problems", problemRouter(connection));
   app.use("/api", auth.middleware);
+  app.use("/api/admin", adminRouter(connection, auth, imports));
   app.get("/api/me", async (req, res, next) => {
     try {
       const id = auth.userId(req);

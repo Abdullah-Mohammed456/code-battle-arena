@@ -96,3 +96,32 @@ export const executeCodeResponseSchema = z
         (value.results.find((item) => item.status !== "AC")?.status ?? "AC"),
     "Inconsistent execution result",
   );
+
+export const problemSourceSchema = z.enum(["codeforces", "codecontests"]);
+export const importRequestSchema = z.strictObject({
+  limit: z.number().int().min(1).max(1000).optional(),
+});
+export const publishProblemSchema = z.strictObject({ published: z.boolean() });
+export const problemQuerySchema = z.strictObject({
+  query: z.string().trim().max(100).optional(),
+  tag: z.string().trim().min(1).max(100).optional(),
+  minRating: z.coerce.number().int().min(0).max(5000).optional(),
+  maxRating: z.coerce.number().int().min(0).max(5000).optional(),
+  source: problemSourceSchema.optional(),
+  judgeable: z.enum(["true", "false"]).transform(v => v === "true").optional(),
+  page: z.coerce.number().int().min(1).max(10000).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+}).refine(v => v.minRating === undefined || v.maxRating === undefined || v.minRating <= v.maxRating, "Invalid rating range");
+export type ProblemQuery = z.infer<typeof problemQuerySchema>;
+export const problemSummarySchema = z.object({
+  id: z.uuid(), slug: z.string(), source: problemSourceSchema, sourceId: z.string(),
+  title: z.string(), url: z.url(), rating: z.number().int().nullable(), tags: z.array(z.string()),
+  judgeable: z.boolean(), timeLimitMs: z.number().int(), memoryLimitMb: z.number().int(),
+  compareMode: z.enum(["token", "exact", "float"]), license: z.string(), attribution: z.string(),
+});
+export const problemDetailSchema = problemSummarySchema.extend({
+  statementMd: z.string().nullable(), samples: z.array(z.object({input: z.string(), expected: z.string()})),
+});
+export const problemListSchema = z.object({
+  items: z.array(problemSummarySchema), total: z.number().int(), page: z.number().int(), limit: z.number().int(),
+});

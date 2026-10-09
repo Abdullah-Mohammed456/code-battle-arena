@@ -23,3 +23,56 @@ model User {
 
   @@map("users")
 }
+
+model Problem {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  source        String
+  sourceId      String    @map("source_id")
+  slug          String    @unique
+  title         String
+  statementMd   String?   @map("statement_md")
+  url           String
+  rating        Int?
+  tags          String[]
+  timeLimitMs   Int       @default(2000) @map("time_limit_ms")
+  memoryLimitMb Int       @default(256) @map("memory_limit_mb")
+  judgeable     Boolean   @default(false)
+  published     Boolean   @default(true)
+  compareMode   String    @default("token") @map("compare_mode")
+  license       String
+  attribution   String
+  fetchedAt     DateTime  @default(now()) @map("fetched_at") @db.Timestamptz(6)
+  tests         TestCase[]
+
+  @@unique([source, sourceId])
+  @@index([rating])
+  @@index([judgeable])
+  @@index([tags], type: Gin)
+  @@map("problems")
+}
+
+model TestCase {
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  problemId String  @map("problem_id") @db.Uuid
+  idx       Int
+  input     String
+  expected  String
+  isSample  Boolean @map("is_sample")
+  bytes     Int
+  problem   Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([problemId, idx])
+  @@map("test_cases")
+}
+
+model ImportRun {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  source     String
+  status     String    @default("running")
+  stats      Json
+  error      String?
+  startedAt  DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
+  finishedAt DateTime? @map("finished_at") @db.Timestamptz(6)
+
+  @@map("import_runs")
+}

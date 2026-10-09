@@ -4,6 +4,7 @@ import type { UserProfile } from "@repo/shared";
 import { createApp } from "./app.js";
 import { envSchema } from "./env.js";
 import { ApiError } from "./errors.js";
+import { serve } from "./test-utils.js";
 
 const config = envSchema.parse({ LOG_LEVEL: "silent" });
 const profile: UserProfile = {
@@ -26,25 +27,6 @@ const auth = {
     imageUrl: "",
   }),
 } satisfies NonNullable<Parameters<typeof createApp>[0]>["auth"];
-export async function serve(
-  app: ReturnType<typeof createApp>,
-  run: (url: string) => Promise<void>,
-) {
-  const server = app.listen(0, "127.0.0.1");
-  try {
-    if (!server.listening)
-      await new Promise<void>((resolve) => server.once("listening", resolve));
-    const address = server.address();
-    if (!address || typeof address === "string")
-      throw new Error("Missing test listener");
-    await run(`http://127.0.0.1:${address.port}`);
-  } finally {
-    await new Promise<void>((resolve, reject) =>
-      server.close((error) => (error ? reject(error) : resolve())),
-    );
-    await app.locals.shutdown();
-  }
-}
 test("health works without services; auth never silently bypasses", async () => {
   await serve(createApp({ config }), async (url) => {
     const health = await fetch(`${url}/health`, {

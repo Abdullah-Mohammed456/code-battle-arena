@@ -24,8 +24,9 @@
     "test": "bun run db:generate && bun test src",
     "db:generate": "prisma generate",
     "db:migrate": "node --env-file-if-exists=.env ./node_modules/.bin/prisma migrate deploy",
-    "test:integration": "bun run db:generate && bun run db:migrate && RUN_DATABASE_TESTS=1 bun test src/db/users.integration.test.ts",
-    "db:migrate:dev": "node --env-file-if-exists=.env ./node_modules/.bin/prisma migrate dev"
+    "test:integration": "bun run db:generate && bun run db:migrate && RUN_DATABASE_TESTS=1 bun test src/db/*.integration.test.ts",
+    "db:migrate:dev": "node --env-file-if-exists=.env ./node_modules/.bin/prisma migrate dev",
+    "import:problems": "node --env-file-if-exists=.env --import tsx src/importers/cli.ts"
   },
   "dependencies": {
     "@clerk/express": "^2.1.78",
