@@ -13,7 +13,6 @@
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
     "@types/bun": "latest",
-    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^26.4.0",
     "eslint": "10.9.1",
@@ -21,8 +20,8 @@
     "@repo/typescript-config": "workspace:*"
   },
   "dependencies": {
-    "cors": "^2.8.6",
+    "@repo/shared": "workspace:*",
     "express": "^5.2.1",
-    "@repo/shared": "workspace:*"
+    "express-rate-limit": "^8.7.1"
   }
 }

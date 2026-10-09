@@ -18,13 +18,31 @@
     "test": {
       "dependsOn": ["^build"],
       "outputs": [],
-      "env": ["RUN_DOCKER_TESTS"]
+      "env": [
+        "RUN_DOCKER_TESTS",
+        "JUDGE_SECRET",
+        "RUNNER_IMAGE",
+        "WORK_DIR",
+        "MAX_CONCURRENT_JOBS",
+        "MAX_QUEUE_SIZE"
+      ],
+      "cache": false
     },
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,
       "persistent": true,
-      "env": ["PORT", "NODE_ENV", "VITE_API_URL", "VITE_WS_URL"]
+      "env": [
+        "PORT",
+        "NODE_ENV",
+        "VITE_API_URL",
+        "VITE_WS_URL",
+        "JUDGE_SECRET",
+        "RUNNER_IMAGE",
+        "WORK_DIR",
+        "MAX_CONCURRENT_JOBS",
+        "MAX_QUEUE_SIZE"
+      ]
     }
   }
 }

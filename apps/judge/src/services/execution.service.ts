@@ -1,46 +1,174 @@
-import { execFile, type ExecException } from "child_process";
-import * as fs from "fs";
-import * as path from "path";
-import { promisify } from "util";
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import type {
+  ExecuteCodeRequest,
+  ExecuteCodeResponse,
+  TestCase,
+  TestCaseResult,
+  TestResultStatus,
+} from "@repo/shared";
+import { env } from "../env.js";
+import { command, docker } from "../process.js";
 import {
-  type TestCase,
-  type TestCaseResult,
-  type ExecuteCodeResponse,
-  type TestResultStatus,
-} from "../types/execution.type.js";
+  activeDirectories,
+  containerState,
+  sandboxArgs,
+  withSandbox,
+} from "../sandbox.js";
+import { compare } from "../compare.js";
+import { JudgeError, sanitize } from "../errors.js";
 
-const execPromise = promisify(execFile);
+async function compile(code: string, directory: string, signal?: AbortSignal) {
+  if (/#\s*include\s*["<]\s*(?:\/|\.\.)/.test(code))
+    return "Unsupported include path";
+  return withSandbox(async (name) => {
+    await docker([
+      "run",
+      "-d",
+      ...sandboxArgs(name, 512),
+      env.RUNNER_IMAGE,
+      "sleep",
+      "infinity",
+    ]);
+    const copied = await command(
+      ["exec", "-i", name, "tee", "/work/solution.cpp"],
+      {
+        input: code,
+        maxOutput: 128 * 1024,
+        signal,
+      },
+    );
+    if (copied.code !== 0 || copied.timedOut || copied.overflow)
+      throw new JudgeError(503, "JUDGE_UNAVAILABLE", "Compiler unavailable");
+    const result = await command(
+      [
+        "exec",
+        name,
+        "g++",
+        "/work/solution.cpp",
+        "-o",
+        "/work/runner",
+        "-std=c++17",
+        "-O2",
+        "-pipe",
+        "-fno-diagnostics-color",
+        "-fmax-errors=20",
+        "-ftemplate-depth=512",
+        "-fconstexpr-ops-limit=33554432",
+      ],
+      { timeout: 10000, signal },
+    );
+    if (
+      result.timedOut ||
+      result.overflow ||
+      (await containerState(name)).OOMKilled
+    ) {
+      return "Compilation resource limit exceeded";
+    }
+    if (result.code !== 0) {
+      if (result.code === 125 || result.code === 126 || result.code === 127)
+        throw new JudgeError(503, "JUDGE_UNAVAILABLE", "Compiler unavailable");
+      return sanitize(result.stderr) || "Compilation failed";
+    }
+    const binary = await command(["exec", name, "cat", "/work/runner"], {
+      maxOutput: 16 * 1024 * 1024,
+      signal,
+    });
+    if (binary.code !== 0 || binary.timedOut || binary.overflow)
+      throw new JudgeError(503, "JUDGE_UNAVAILABLE", "Compiler unavailable");
+    await writeFile(join(directory, "runner"), binary.stdoutBuffer, {
+      mode: 0o755,
+    });
+    return undefined;
+  });
+}
 
-export const executeCppCode = async (
+async function runTest(
+  tc: TestCase,
+  directory: string,
+  options: Partial<ExecuteCodeRequest>,
+  signal?: AbortSignal,
+  outputLimit = 1024 * 1024,
+): Promise<TestCaseResult> {
+  return withSandbox(async (name) => {
+    const start = performance.now();
+    const result = await command(
+      [
+        "run",
+        "-i",
+        ...sandboxArgs(name, options.memoryLimitMb ?? 256),
+        "--mount",
+        `type=bind,src=${join(directory, "runner")},dst=/work/runner,readonly`,
+        env.RUNNER_IMAGE,
+        "/work/runner",
+      ],
+      {
+        input: tc.input,
+        timeout: (options.timeLimitMs ?? 2000) + 500,
+        maxOutput: outputLimit,
+        signal,
+      },
+    );
+    const state = await containerState(name);
+    const executionTimeMs = Math.round(performance.now() - start);
+    let status: TestResultStatus;
+    if (result.overflow) status = "OLE";
+    else if (result.timedOut) status = "TLE";
+    else if (state.OOMKilled) status = "MLE";
+    else if (state.Running || result.code === 125)
+      throw new JudgeError(
+        503,
+        "JUDGE_UNAVAILABLE",
+        "Execution service unavailable",
+      );
+    else if (state.ExitCode !== 0) status = "RE";
+    else
+      status = compare(
+        result.stdout,
+        tc.expectedOutput,
+        options.compareMode,
+        options.floatEpsilon,
+      )
+        ? "AC"
+        : "WA";
+    const expectedOutput = tc.expectedOutput.trim();
+    if (status === "AC" || status === "WA") {
+      return {
+        testCaseId: tc.id,
+        status,
+        actualOutput: result.stdout.trim(),
+        expectedOutput,
+        executionTimeMs,
+      };
+    }
+    return {
+      testCaseId: tc.id,
+      status,
+      expectedOutput: tc.expectedOutput,
+      executionTimeMs,
+      error: {
+        TLE: "Time Limit Exceeded",
+        MLE: "Memory Limit Exceeded",
+        OLE: "Output Limit Exceeded",
+        RE: "Runtime Error",
+      }[status as "TLE" | "MLE" | "OLE" | "RE"],
+    };
+  });
+}
+
+export async function executeCppCode(
   code: string,
   testCases: TestCase[],
-): Promise<ExecuteCodeResponse> => {
-  const uniqueID = Date.now();
-  const filePath = path.join(process.cwd(), `temp_solution${uniqueID}.cpp`);
-  const exePath = path.join(process.cwd(), `temp_exe${uniqueID}`);
-  const inputPath = path.join(process.cwd(), `temp_input${uniqueID}.txt`);
-
+  options: Partial<ExecuteCodeRequest> = {},
+  signal?: AbortSignal,
+): Promise<ExecuteCodeResponse> {
+  signal?.throwIfAborted();
+  await mkdir(env.WORK_DIR, { recursive: true, mode: 0o700 });
+  const directory = await mkdtemp(join(env.WORK_DIR, "job-"));
+  activeDirectories.add(directory);
   try {
-    fs.writeFileSync(filePath, code);
-
-    const compileArgs = [
-      "run",
-      "--rm",
-      "-v",
-      `${filePath}:/app/solution.cpp`,
-      "-v",
-      `${process.cwd()}:/app/build`,
-      "cpp-runner",
-      "g++",
-      "/app/solution.cpp",
-      "-o",
-      `/app/build/temp_exe${uniqueID}`,
-    ];
-
-    try {
-      await execPromise("docker", compileArgs, { timeout: 8000 });
-    } catch (cause) {
-      const compileError = cause as ExecException & { stderr?: string };
+    const error = await compile(code, directory, signal);
+    if (error)
       return {
         overallStatus: "CE",
         passedCount: 0,
@@ -49,92 +177,35 @@ export const executeCppCode = async (
           testCaseId: tc.id,
           status: "CE",
           expectedOutput: tc.expectedOutput,
-          error: compileError.stderr || compileError.message,
+          error,
         })),
       };
-    }
-
     const results: TestCaseResult[] = [];
-    let passedCount = 0;
-    let overallStatus: TestResultStatus = "AC";
-
+    let outputBytes = 0;
     for (const tc of testCases) {
-      fs.writeFileSync(inputPath, tc.input);
-      const startTime = Date.now();
-
-      try {
-        const runArgs = [
-          "run",
-          "--rm",
-          "--memory=256m",
-          "--network",
-          "none",
-          "-v",
-          `${exePath}:/app/runner`,
-          "-v",
-          `${inputPath}:/app/input.txt`,
-          "cpp-runner",
-          "sh",
-          "-c",
-          "/app/runner < /app/input.txt",
-        ];
-
-        const { stdout } = await execPromise("docker", runArgs, {
-          timeout: 3000,
-        });
-        const executionTimeMs = Date.now() - startTime;
-
-        const actualOutput = stdout.trim();
-        const expected = tc.expectedOutput.trim();
-
-        if (actualOutput === expected) {
-          passedCount++;
-          results.push({
-            testCaseId: tc.id,
-            status: "AC",
-            actualOutput,
-            expectedOutput: expected,
-            executionTimeMs,
-          });
-        } else {
-          if (overallStatus === "AC") overallStatus = "WA";
-          results.push({
-            testCaseId: tc.id,
-            status: "WA",
-            actualOutput,
-            expectedOutput: expected,
-            executionTimeMs,
-          });
-        }
-      } catch (cause) {
-        const runError = cause as ExecException & { stderr?: string };
-        const executionTimeMs = Date.now() - startTime;
-        const isTLE = runError.killed || runError.signal === "SIGTERM";
-        const status: TestResultStatus = isTLE ? "TLE" : "RE";
-
-        if (overallStatus === "AC") overallStatus = status;
-
-        results.push({
-          testCaseId: tc.id,
-          status,
-          expectedOutput: tc.expectedOutput,
-          error: isTLE
-            ? "Time Limit Exceeded"
-            : runError.stderr || runError.message,
-          executionTimeMs,
-        });
-      }
+      signal?.throwIfAborted();
+      const result = await runTest(
+        tc,
+        directory,
+        options,
+        signal,
+        Math.min(1024 * 1024, 4 * 1024 * 1024 - outputBytes),
+      );
+      outputBytes += Buffer.byteLength(result.actualOutput ?? "");
+      results.push(result);
     }
-
     return {
-      overallStatus,
-      passedCount,
+      overallStatus:
+        results.find((result) => result.status !== "AC")?.status ?? "AC",
+      passedCount: results.filter((result) => result.status === "AC").length,
       totalCount: testCases.length,
       results,
     };
   } finally {
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    if (fs.existsSync(exePath)) fs.unlinkSync(exePath);
-    if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+    try {
+      await rm(directory, { recursive: true, force: true });
+    } finally {
+      activeDirectories.delete(directory);
+    }
   }
-};
+}

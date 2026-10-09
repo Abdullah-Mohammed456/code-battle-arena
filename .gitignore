@@ -38,3 +38,8 @@ markdown-files/
 
 .env.*
 !.env.example
+
+# Local project notes
+*.md
+*.markdown
+docs/

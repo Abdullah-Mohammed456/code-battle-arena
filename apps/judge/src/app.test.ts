@@ -1,32 +1,33 @@
-import { afterEach, expect, mock, test } from "bun:test";
-import { promisify } from "node:util";
-import { existsSync } from "node:fs";
+import { expect, test } from "bun:test";
+import { createApp } from "./app.js";
+import { envSchema } from "./env.js";
+import { JudgeError } from "./errors.js";
+import type { ExecuteCodeResponse } from "@repo/shared";
 
-const calls: string[][] = [];
-let outputs: string[] = [];
-let failure: Error | undefined;
-const execFile = Object.assign(() => {}, {
-  [promisify.custom]: async (_file: string, args: string[]) => {
-    calls.push(args);
-    if (failure) throw failure;
-    return {
-      stdout: args.includes("g++") ? "" : (outputs.shift() ?? "8"),
-      stderr: "",
-    };
-  },
-});
-mock.module("child_process", () => ({ execFile }));
-const { app } = await import("./app.js");
-const { executeCppCode } = await import("./services/execution.service.js");
-const { envSchema } = await import("./env.js");
+const response: ExecuteCodeResponse = {
+  overallStatus: "AC",
+  passedCount: 1,
+  totalCount: 1,
+  results: [
+    {
+      testCaseId: "1",
+      status: "AC",
+      actualOutput: "8",
+      expectedOutput: "8",
+      executionTimeMs: 12,
+    },
+  ],
+};
+const body = {
+  code: "int main() {}",
+  testCases: [{ id: "1", input: "3 5", expectedOutput: "8" }],
+};
+const config = envSchema.parse({ NODE_ENV: "test" });
 
-afterEach(() => {
-  calls.length = 0;
-  outputs = [];
-  failure = undefined;
-});
-
-async function post(body: unknown) {
+async function withServer(
+  app: ReturnType<typeof createApp>,
+  run: (url: string) => Promise<void>,
+) {
   const server = app.listen(0, "127.0.0.1");
   try {
     if (!server.listening)
@@ -37,78 +38,142 @@ async function post(body: unknown) {
     const address = server.address();
     if (!address || typeof address === "string")
       throw new Error("Missing test port");
-    const response = await fetch(
-      `http://127.0.0.1:${address.port}/api/execution/run`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      },
-    );
-    return { status: response.status, body: await response.json() };
+    await run(`http://127.0.0.1:${address.port}`);
   } finally {
     await new Promise<void>((resolve, reject) =>
       server.close((error) => (error ? reject(error) : resolve())),
     );
   }
 }
-
-const testCases = [{ id: "1", input: "3 5", expectedOutput: "8" }];
-
-test("legacy endpoint preserves its success response", async () => {
-  const response = await post({ code: "int main() {}", testCases });
-  expect(response.status).toBe(200);
-  expect(response.body).toMatchObject({
-    overallStatus: "AC",
-    passedCount: 1,
-    totalCount: 1,
-    results: [
-      { testCaseId: "1", status: "AC", actualOutput: "8", expectedOutput: "8" },
-    ],
+const post = (url: string, value: unknown = body, token?: string) =>
+  fetch(`${url}/api/execution/run`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(value),
   });
-  expect(calls[0]).toContain("g++");
-  const sourceMount = calls[0]?.find((arg) =>
-    arg.endsWith(":/app/solution.cpp"),
+
+test("legacy success fields and request IDs are preserved", async () => {
+  await withServer(
+    createApp(async () => response, config),
+    async (url) => {
+      const result = await post(url);
+      expect(result.status).toBe(200);
+      expect(await result.json()).toEqual(response);
+      expect(result.headers.get("X-Request-Id")).toMatch(/^[a-f0-9-]{36}$/);
+      expect(result.headers.has("X-Powered-By")).toBe(false);
+    },
   );
-  expect(sourceMount).toBeDefined();
-  expect(existsSync(sourceMount!.split(":")[0]!)).toBe(false);
 });
 
-test("invalid bodies never start the runner", async () => {
-  for (const body of [
-    null,
-    {},
-    { code: 42, testCases },
-    { code: "x", testCases: [null] },
-  ]) {
-    expect((await post(body)).status).toBe(400);
-  }
-  expect(calls).toHaveLength(0);
+test("malformed requests never reach execution", async () => {
+  let calls = 0;
+  await withServer(
+    createApp(async () => {
+      calls++;
+      return response;
+    }, config),
+    async (url) => {
+      for (const value of [
+        null,
+        {},
+        { ...body, code: 42 },
+        { ...body, testCases: [null] },
+      ]) {
+        const result = await post(url, value);
+        expect(result.status).toBe(400);
+        expect(await result.json()).toMatchObject({
+          error: expect.any(String),
+        });
+      }
+      const oversized = await post(url, {
+        ...body,
+        code: "x".repeat(2 * 1024 * 1024),
+      });
+      expect(oversized.status).toBe(413);
+      expect(calls).toBe(0);
+    },
+  );
 });
 
-test("compiles once and keeps the first failing verdict", async () => {
-  outputs = ["wrong", "8"];
-  const response = await executeCppCode("int main() {}", [
-    ...testCases,
-    { ...testCases[0]!, id: "2" },
-  ]);
-  expect(response.overallStatus).toBe("WA");
-  expect(response.passedCount).toBe(1);
-  expect(response.results.map((result) => result.status)).toEqual(["WA", "AC"]);
-  expect(calls.filter((args) => args.includes("g++"))).toHaveLength(1);
+test("authentication is enforced before parsing or executing", async () => {
+  const secret = "test-secret-that-is-at-least-32-characters";
+  await withServer(
+    createApp(async () => response, { ...config, JUDGE_SECRET: secret }),
+    async (url) => {
+      expect((await fetch(`${url}/health`)).status).toBe(200);
+      expect((await post(url)).status).toBe(401);
+      expect((await post(url, body, "wrong")).status).toBe(401);
+      expect((await post(url, body, secret)).status).toBe(200);
+    },
+  );
 });
 
-test("compile failure preserves CE results", async () => {
-  failure = Object.assign(new Error("compile failed"), {
-    stderr: "invalid C++",
+test("queue rejects excess HTTP requests", async () => {
+  let release!: () => void;
+  const blocked = new Promise<void>((resolve) => {
+    release = resolve;
   });
-  const response = await executeCppCode("broken", testCases);
-  expect(response.overallStatus).toBe("CE");
-  expect(response.results[0]?.error).toBe("invalid C++");
-  expect(calls).toHaveLength(1);
+  let calls = 0;
+  await withServer(
+    createApp(
+      async () => {
+        calls++;
+        await blocked;
+        return response;
+      },
+      { ...config, MAX_QUEUE_SIZE: 0 },
+    ),
+    async (url) => {
+      const first = post(url);
+      while (!calls) await new Promise((resolve) => setImmediate(resolve));
+      try {
+        const result = await post(url);
+        expect(result.status).toBe(503);
+        expect(result.headers.get("Retry-After")).toBe("1");
+        expect(await result.json()).toMatchObject({ code: "QUEUE_FULL" });
+      } finally {
+        release();
+        await first;
+      }
+    },
+  );
 });
 
-test("judge environment has a local default and rejects invalid ports", () => {
-  expect(envSchema.parse({})).toEqual({ PORT: 3001, NODE_ENV: "development" });
-  expect(envSchema.safeParse({ PORT: "65536" }).success).toBe(false);
+test("rate limits and infrastructure errors do not leak internals", async () => {
+  await withServer(
+    createApp(async () => {
+      throw new Error("/home/private/secret");
+    }, config),
+    async (url) => {
+      const result = await post(url);
+      expect(result.status).toBe(500);
+      expect(await result.text()).not.toContain("/home/private");
+      for (let i = 0; i < 29; i++) await post(url, {});
+      const limited = await post(url, {});
+      expect(limited.status).toBe(429);
+      expect(limited.headers.get("Retry-After")).toBe("60");
+    },
+  );
+  await withServer(
+    createApp(async () => {
+      throw new JudgeError(
+        503,
+        "JUDGE_UNAVAILABLE",
+        "Execution service unavailable",
+      );
+    }, config),
+    async (url) => {
+      expect((await post(url)).status).toBe(503);
+    },
+  );
+});
+
+test("production requires a secret and queue settings are bounded", () => {
+  expect(envSchema.parse({}).PORT).toBe(3001);
+  expect(envSchema.safeParse({ NODE_ENV: "production" }).success).toBe(false);
+  expect(envSchema.safeParse({ MAX_CONCURRENT_JOBS: "0" }).success).toBe(false);
+  expect(envSchema.safeParse({ MAX_QUEUE_SIZE: "101" }).success).toBe(false);
 });

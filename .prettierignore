@@ -4,3 +4,7 @@ build
 .turbo
 bun.lock
 markdown-files
+
+*.md
+*.markdown
+docs/

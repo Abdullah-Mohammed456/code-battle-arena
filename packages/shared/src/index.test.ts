@@ -35,3 +35,26 @@ test("ports must be whole numbers between 1 and 65535", () => {
   expect(nodeEnvSchema.parse(undefined)).toBe("development");
   expect(nodeEnvSchema.safeParse("staging").success).toBe(false);
 });
+
+test("execution limits count UTF-8 bytes and reject abusive fields", () => {
+  for (const change of [
+    { code: "é".repeat(32769) },
+    { testCases: Array(101).fill(valid.testCases[0]) },
+    { testCases: [{ id: "../bad", input: "", expectedOutput: "" }] },
+    { testCases: [{ id: "1", input: "x".repeat(262145), expectedOutput: "" }] },
+    { timeLimitMs: 10001 },
+    { memoryLimitMb: 513 },
+    { language: "python" },
+    { floatEpsilon: 0.02 },
+  ])
+    expect(executeCodeSchema.safeParse({ ...valid, ...change }).success).toBe(
+      false,
+    );
+  expect(
+    executeCodeSchema.safeParse({
+      ...valid,
+      timeLimitMs: 2000,
+      compareMode: "token",
+    }).success,
+  ).toBe(true);
+});
