@@ -30,8 +30,14 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   background: radial-gradient(ellipse at 50% 5%, rgba(116, 42, 61, .24), transparent 38%), linear-gradient(180deg, #090809 0%, #0c090b 75%, #211014 100%);
 }
 .topbar { height: 76px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
-.wordmark { display: flex; align-items: center; gap: .55rem; color: var(--muted); font: 500 .72rem var(--mono); letter-spacing: .08em; }
-.wordmark span { display: grid; place-items: center; width: 30px; height: 30px; color: #100b0d; background: var(--pink); font: 600 .75rem "Space Grotesk", sans-serif; }
+.wordmark { display: flex; align-items: center; gap: .7rem; }
+.brand-mark { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid rgba(255, 145, 167, .35); background: rgba(255, 145, 167, .06); }
+.brand-mark svg { width: 30px; height: 30px; fill: none; stroke-width: 1.6; stroke-linecap: square; stroke-linejoin: miter; }
+.brand-mark path:first-child { stroke: var(--pink); }
+.brand-mark path:last-child { stroke: var(--ink); }
+.brand-name { display: flex; flex-direction: column; gap: .2rem; }
+.brand-name strong { color: var(--ink); font: 600 .68rem "Space Grotesk", sans-serif; letter-spacing: .07em; }
+.brand-name small { color: var(--pink); font: 400 .52rem var(--mono); letter-spacing: .24em; }
 .topbar nav { display: flex; gap: clamp(1.25rem, 3vw, 3rem); height: 100%; align-items: center; }
 .topbar nav a { height: 100%; display: grid; place-items: center; position: relative; color: var(--muted); font-size: .8rem; }
 .topbar nav a:hover, .topbar nav a.active { color: var(--ink); }

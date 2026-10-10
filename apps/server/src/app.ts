@@ -18,6 +18,8 @@ import { connectDatabase } from "./db/index.js";
 import type { Database } from "./db/index.js";
 import { userStore } from "./db/queries/users.js";
 import { ApiError } from "./errors.js";
+import { submissionRouter } from "./submissions.js";
+import { runOnJudge } from "./services/judge.js";
 
 export function createApp(
   options: {
@@ -26,6 +28,7 @@ export function createApp(
     database?: Database;
     getUser?: (id: string) => Promise<UserProfile>;
     readiness?: () => Promise<void>;
+    execute?: typeof runOnJudge;
   } = {},
 ) {
   const config = options.config ?? env;
@@ -106,9 +109,10 @@ export function createApp(
         next(new ApiError(429, "RATE_LIMITED", "Too many requests")),
     }),
   );
-  app.use(express.json({ limit: "128kb" }));
+  app.use(express.json({ limit: "384kb" }));
   app.use("/api/problems", problemRouter(connection));
   app.use("/api", auth.middleware);
+  app.use("/api", submissionRouter(connection, auth, options.execute));
   app.use("/api/admin", adminRouter(connection, auth, imports));
   app.get("/api/me", async (req, res, next) => {
     try {

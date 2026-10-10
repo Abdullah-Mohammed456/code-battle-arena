@@ -16,6 +16,15 @@ function ArrowIcon() {
   return <svg aria-hidden="true" viewBox="0 0 16 16"><path d="M4 12 12 4M5 4h7v7" /></svg>;
 }
 
+function BrandMark() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 40 40">
+      <path d="M14 4H5v9M26 4h9v9M5 27v9h9M35 27v9h-9" />
+      <path d="m17 14-6 6 6 6m6-12 6 6-6 6m-1-14-4 16" />
+    </svg>
+  );
+}
+
 export function ProblemPreview() {
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
@@ -27,7 +36,10 @@ export function ProblemPreview() {
   return (
     <main className="preview">
       <header className="topbar">
-        <a className="wordmark" href="#top" aria-label="Code Battle Arena home"><span>CB</span> / ARENA</a>
+        <a className="wordmark" href="#top" aria-label="Code Battle Arena home">
+          <span className="brand-mark"><BrandMark /></span>
+          <span className="brand-name"><strong>CODE BATTLE</strong><small>ARENA</small></span>
+        </a>
         <nav aria-label="Main navigation">
           <a className="active" href="#problems">Problems</a>
           <a href="#battles">Battles</a>
@@ -45,7 +57,7 @@ export function ProblemPreview() {
         <div className="stats" aria-label="Problem totals">
           <div><strong>200</strong><span>CATALOG</span></div>
           <div><strong>77</strong><span>JUDGEABLE</span></div>
-            <p>CODEFORCES<br />+ CODECONTESTS</p>
+          <p>CODEFORCES<br />+ CODECONTESTS</p>
         </div>
       </section>
 

@@ -33,6 +33,39 @@ export function problemStore(db: Database) {
       const { tests, ...problem } = value;
       return { ...problem, samples: tests };
     },
+    async forRun(slug: string) {
+      return db.problem.findFirst({
+        where: { slug, published: true },
+        select: {
+          id: true,
+          timeLimitMs: true,
+          memoryLimitMb: true,
+          compareMode: true,
+          tests: {
+            where: { isSample: true },
+            orderBy: { idx: "asc" },
+            select: { idx: true, input: true, expected: true },
+          },
+        },
+      });
+    },
+    async forSubmission(slug: string) {
+      return db.problem.findFirst({
+        where: { slug, published: true },
+        select: {
+          id: true,
+          title: true,
+          judgeable: true,
+          timeLimitMs: true,
+          memoryLimitMb: true,
+          compareMode: true,
+          tests: {
+            orderBy: { idx: "asc" },
+            select: { idx: true, input: true, expected: true, isSample: true },
+          },
+        },
+      });
+    },
     async publish(slug: string, published: boolean) {
       const result = await db.problem.updateMany({ where: { slug }, data: { published } });
       if (!result.count) throw new ApiError(404, "NOT_FOUND", "Problem not found");

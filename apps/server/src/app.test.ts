@@ -91,7 +91,7 @@ test("CORS allowlist and JSON errors are enforced", async () => {
     const large = await fetch(`${url}/api/me`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: "x".repeat(128 * 1024) }),
+      body: JSON.stringify({ code: "x".repeat(384 * 1024) }),
     });
     expect(large.status).toBe(413);
     expect((await fetch(`${url}/missing`)).status).toBe(404);

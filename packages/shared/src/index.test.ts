@@ -1,5 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { executeCodeSchema, nodeEnvSchema, portSchema } from "./index.js";
+import {
+  executeCodeSchema,
+  nodeEnvSchema,
+  portSchema,
+  runProblemSchema,
+  submissionResultSchema,
+} from "./index.js";
 
 const valid = {
   code: "int main() {}",
@@ -57,4 +63,25 @@ test("execution limits count UTF-8 bytes and reject abusive fields", () => {
       compareMode: "token",
     }).success,
   ).toBe(true);
+});
+
+test("run requests are strict and hidden test results cannot contain outputs", () => {
+  expect(
+    runProblemSchema.safeParse({ code: "int main() {}", input: "1 2" }).success,
+  ).toBe(true);
+  expect(
+    runProblemSchema.safeParse({ code: "int main() {}", admin: true }).success,
+  ).toBe(false);
+  expect(
+    submissionResultSchema.safeParse({ idx: 1, status: "WA", sample: false })
+      .success,
+  ).toBe(true);
+  expect(
+    submissionResultSchema.safeParse({
+      idx: 1,
+      status: "WA",
+      sample: false,
+      expected: "secret",
+    }).success,
+  ).toBe(false);
 });

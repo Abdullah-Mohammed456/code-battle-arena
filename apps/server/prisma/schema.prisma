@@ -1,7 +1,7 @@
 generator client {
-  provider = "prisma-client"
-  output = "../src/generated/prisma"
-  moduleFormat = "esm"
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
   importFileExtension = "js"
 }
 
@@ -10,39 +10,43 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  clerkId     String   @unique @map("clerk_id")
-  handle      String   @unique
-  displayName String   @map("display_name")
-  avatarUrl   String?  @map("avatar_url")
-  rating      Int      @default(1200)
-  games       Int      @default(0)
-  cfHandle    String?  @map("cf_handle")
-  role        String   @default("user")
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clerkId     String       @unique @map("clerk_id")
+  handle      String       @unique
+  displayName String       @map("display_name")
+  avatarUrl   String?      @map("avatar_url")
+  rating      Int          @default(1200)
+  games       Int          @default(0)
+  cfHandle    String?      @map("cf_handle")
+  role        String       @default("user")
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  submissions Submission[]
+  progress    Progress[]
 
   @@map("users")
 }
 
 model Problem {
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   source        String
-  sourceId      String    @map("source_id")
-  slug          String    @unique
+  sourceId      String       @map("source_id")
+  slug          String       @unique
   title         String
-  statementMd   String?   @map("statement_md")
+  statementMd   String?      @map("statement_md")
   url           String
   rating        Int?
   tags          String[]
-  timeLimitMs   Int       @default(2000) @map("time_limit_ms")
-  memoryLimitMb Int       @default(256) @map("memory_limit_mb")
-  judgeable     Boolean   @default(false)
-  published     Boolean   @default(true)
-  compareMode   String    @default("token") @map("compare_mode")
+  timeLimitMs   Int          @default(2000) @map("time_limit_ms")
+  memoryLimitMb Int          @default(256) @map("memory_limit_mb")
+  judgeable     Boolean      @default(false)
+  published     Boolean      @default(true)
+  compareMode   String       @default("token") @map("compare_mode")
   license       String
   attribution   String
-  fetchedAt     DateTime  @default(now()) @map("fetched_at") @db.Timestamptz(6)
+  fetchedAt     DateTime     @default(now()) @map("fetched_at") @db.Timestamptz(6)
   tests         TestCase[]
+  submissions   Submission[]
+  progress      Progress[]
 
   @@unique([source, sourceId])
   @@index([rating])
@@ -75,4 +79,41 @@ model ImportRun {
   finishedAt DateTime? @map("finished_at") @db.Timestamptz(6)
 
   @@map("import_runs")
+}
+
+model Submission {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  problemId       String    @map("problem_id") @db.Uuid
+  language        String    @default("cpp17")
+  code            String
+  status          String
+  passed          Int
+  total           Int
+  timeMs          Int       @map("time_ms")
+  results         Json
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem         Problem   @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  bestForProgress Progress? @relation("BestSubmission")
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([problemId])
+  @@map("submissions")
+}
+
+model Progress {
+  userId           String      @map("user_id") @db.Uuid
+  problemId        String      @map("problem_id") @db.Uuid
+  status           String
+  attempts         Int         @default(0)
+  bestSubmissionId String?     @unique @map("best_submission_id") @db.Uuid
+  firstSolvedAt    DateTime?   @map("first_solved_at") @db.Timestamptz(6)
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem          Problem     @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  bestSubmission   Submission? @relation("BestSubmission", fields: [bestSubmissionId], references: [id], onDelete: SetNull)
+
+  @@id([userId, problemId])
+  @@index([userId, status])
+  @@map("progress")
 }
