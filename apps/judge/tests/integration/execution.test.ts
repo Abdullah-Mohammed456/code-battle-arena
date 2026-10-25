@@ -71,6 +71,16 @@ test.skipIf(!enabled)(
   30000,
 );
 
+test.skipIf(!enabled)(
+  "defines ONLINE_JUDGE for contest solutions",
+  async () => {
+    expect((await fixture("online_judge.cpp", "judge")).overallStatus).toBe(
+      "AC",
+    );
+  },
+  30000,
+);
+
 for (const [name, verdict] of [
   ["compile_error.cpp", "CE"],
   ["compile_bomb.cpp", "CE"],

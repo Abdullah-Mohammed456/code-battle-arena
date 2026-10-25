@@ -33,11 +33,14 @@ export const submissionResultSchema = z
     sample: z.boolean(),
     actual: z.string().optional(),
     expected: z.string().optional(),
+    error: z.string().optional(),
   })
   .refine(
     (result) =>
       result.sample ||
-      (result.actual === undefined && result.expected === undefined),
+      (result.actual === undefined &&
+        result.expected === undefined &&
+        result.error === undefined),
     "Hidden test outputs must not be included",
   );
 export const submissionSchema = z.object({

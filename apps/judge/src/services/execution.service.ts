@@ -45,6 +45,7 @@ async function compile(code: string, directory: string, signal?: AbortSignal) {
         "exec",
         name,
         "g++",
+        "-DONLINE_JUDGE",
         "/work/solution.cpp",
         "-o",
         "/work/runner",

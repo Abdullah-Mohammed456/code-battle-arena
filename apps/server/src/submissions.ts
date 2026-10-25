@@ -36,6 +36,7 @@ type StoredResult = {
   sample: boolean;
   actual?: string;
   expected?: string;
+  error?: string;
 };
 
 function rateLimitFor(auth: ReturnType<typeof authentication>, limit: number) {
@@ -154,6 +155,7 @@ export function submissionRouter(
             sample: true,
             actual: item.actualOutput,
             expected: item.expectedOutput,
+            error: item.error,
           }));
           return problemRunResponseSchema.parse({
             kind: "samples",
@@ -210,7 +212,11 @@ export function submissionRouter(
               timeMs: item.executionTimeMs,
               sample: test.isSample,
               ...(test.isSample
-                ? { actual: item.actualOutput, expected: item.expectedOutput }
+                ? {
+                    actual: item.actualOutput,
+                    expected: item.expectedOutput,
+                    error: item.error,
+                  }
                 : {}),
             };
           });

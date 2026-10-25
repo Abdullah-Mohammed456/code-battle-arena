@@ -1,0 +1,132 @@
+.landing {
+  max-width: 1320px;
+  margin: 0 auto;
+}
+.landing-hero {
+  padding: clamp(3rem, 7vw, 6rem) 0 1.5rem;
+}
+.landing-hero h1 {
+  margin: 1.5rem 0 2.5rem;
+  color: var(--pink);
+  font-size: clamp(3.5rem, 12vw, 10.5rem);
+  line-height: 0.88;
+  letter-spacing: -0.075em;
+  font-weight: 600;
+}
+.landing-hero h1 span {
+  color: var(--ink);
+}
+.landing-intro {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 2rem;
+}
+.landing-intro > p {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(0.95rem, 1.6vw, 1.3rem);
+  line-height: 1.6;
+}
+.landing-actions {
+  display: grid;
+  gap: 1rem;
+  min-width: 250px;
+}
+.landing-actions .pink-button {
+  gap: 2rem;
+  min-height: 48px;
+}
+.landing-actions > .source-link {
+  text-align: right;
+}
+.landing-caption {
+  margin-top: 4rem;
+  padding: 1rem 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font: 0.6rem var(--mono);
+  letter-spacing: 0.04em;
+}
+.landing-problems,
+.landing-process {
+  padding: clamp(3rem, 6vw, 5rem) 0;
+}
+.landing-description {
+  max-width: 580px;
+  margin: 1.2rem 0 2rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+.landing-process ol {
+  padding: 0;
+  margin: 2rem 0 0;
+  list-style: none;
+}
+.landing-process li {
+  display: grid;
+  grid-template-columns: 120px 1fr 1fr;
+  gap: 2rem;
+  align-items: baseline;
+  border-bottom: 1px solid var(--line);
+  padding: 1.5rem 0;
+}
+.landing-process li > span {
+  color: var(--pink);
+  font: 0.65rem var(--mono);
+}
+.landing-process h3 {
+  font-size: clamp(1.25rem, 2vw, 1.8rem);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  margin: 0;
+}
+.landing-process p {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.7;
+  margin: 0;
+}
+.retry-button {
+  border: 1px solid var(--line);
+  padding: 0.7rem 1rem;
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+}
+@media (max-width: 620px) {
+  .landing-hero h1 {
+    margin-bottom: 2rem;
+  }
+  .landing-intro {
+    flex-direction: column;
+    align-items: start;
+  }
+  .landing-actions {
+    width: 100%;
+  }
+  .landing-actions > .source-link {
+    text-align: left;
+  }
+  .landing-caption {
+    margin-top: 2.5rem;
+    font-size: 0.5rem;
+  }
+  .landing-problems .list-heading {
+    gap: 1rem;
+  }
+  .landing-problems .list-heading > .source-link {
+    max-width: 110px;
+    text-align: right;
+    font-size: 0.6rem;
+    line-height: 1.6;
+  }
+  .landing-process li {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}

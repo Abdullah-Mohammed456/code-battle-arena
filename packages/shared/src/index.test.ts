@@ -67,6 +67,14 @@ test("execution limits count UTF-8 bytes and reject abusive fields", () => {
 
 test("run requests are strict and hidden test results cannot contain outputs", () => {
   expect(
+    submissionResultSchema.safeParse({
+      idx: 1,
+      status: "RE",
+      sample: false,
+      error: "private diagnostic",
+    }).success,
+  ).toBe(false);
+  expect(
     runProblemSchema.safeParse({ code: "int main() {}", input: "1 2" }).success,
   ).toBe(true);
   expect(

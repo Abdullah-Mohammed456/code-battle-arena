@@ -1,5 +1,9 @@
 import { expect, test } from "bun:test";
-import type { ExecuteCodeResponse } from "@repo/shared";
+import {
+  z,
+  submissionResultSchema,
+  type ExecuteCodeResponse,
+} from "@repo/shared";
 import type { Database } from "./db/index.js";
 import { createApp } from "./app.js";
 import { envSchema } from "./env.js";
@@ -281,5 +285,35 @@ test("history and detail are scoped to the signed-in user", async () => {
     expect((await fetch(`${url}/api/submissions?unexpected=yes`)).status).toBe(
       400,
     );
+  });
+});
+
+test("sample compilation diagnostics survive run and submit without private test details", async () => {
+  const { app } = fixture(async (input) => ({
+    overallStatus: "CE",
+    passedCount: 0,
+    totalCount: input.testCases.length,
+    results: input.testCases.map((item) => ({
+      testCaseId: item.id,
+      status: "CE",
+      expectedOutput: item.expectedOutput,
+      error: "expected ';' before return",
+    })),
+  }));
+  await serve(app, async (url) => {
+    for (const action of ["run", "submit"]) {
+      const response = await post(url, `/api/problems/cf-a-plus-b/${action}`, {
+        code: "invalid",
+      });
+      expect(response.status).toBe(200);
+      const body = z
+        .object({ results: z.array(submissionResultSchema) })
+        .parse(await response.json());
+      expect(body.results[0]!.error).toBe("expected ';' before return");
+      if (action === "submit") {
+        expect(body.results[1]!.error).toBeUndefined();
+        expect(body.results[1]!.expected).toBeUndefined();
+      }
+    }
   });
 });

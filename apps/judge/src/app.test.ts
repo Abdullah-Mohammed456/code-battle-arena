@@ -40,9 +40,10 @@ async function withServer(
       throw new Error("Missing test port");
     await run(`http://127.0.0.1:${address.port}`);
   } finally {
-    await new Promise<void>((resolve, reject) =>
-      server.close((error) => (error ? reject(error) : resolve())),
-    );
+    if (server.listening)
+      await new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      );
   }
 }
 const post = (url: string, value: unknown = body, token?: string) =>
