@@ -46,25 +46,20 @@ function PublicApp() {
     <Shell>
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route
-          path="/problems"
-          element={<ProblemList authConfigured={false} />}
-        />
+        <Route path="/problems" element={<ProblemList />} />
         <Route
           path="/problems/:slug"
           element={
             <WorkspaceRoute
               api={async () => {
-                throw new Error(
-                  "Sign-in is not configured — add the Clerk publishable key to apps/web/.env",
-                );
+                throw new Error("Sign-in is temporarily unavailable.");
               }}
             />
           }
         />
         <Route path="/sign-in/*" element={<SetupNeeded />} />
         <Route path="/sign-up/*" element={<SetupNeeded />} />
-        <Route path="*" element={<ProblemList authConfigured={false} />} />
+        <Route path="*" element={<ProblemList />} />
       </Routes>
     </Shell>
   );
@@ -72,15 +67,10 @@ function PublicApp() {
 
 function SetupNeeded() {
   return (
-    <section className="setup-notice">
-      <p className="eyebrow">ACCOUNT SETUP</p>
-      <h1>Connect Clerk to continue</h1>
-      <p>
-        Add the Clerk publishable key to <code>apps/web/.env</code> — the server
-        secret stays in <code>apps/server/.env</code>
+    <section className="auth-page">
+      <p className="error-message" role="status">
+        Sign-in is temporarily unavailable. Please try again later.
       </p>
-      <pre>VITE_CLERK_PUBLISHABLE_KEY=pk_test_…</pre>
-      <p>Restart the web dev server after saving the key</p>
     </section>
   );
 }

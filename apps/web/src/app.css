@@ -17,38 +17,6 @@
   color: var(--muted);
   padding: 2rem 0;
 }
-.setup-inline,
-.setup-notice {
-  max-width: 1320px;
-  margin: 1.5rem auto;
-  border: 1px solid rgba(255, 145, 167, 0.35);
-  background: rgba(255, 145, 167, 0.05);
-  padding: 1rem;
-  color: #e7a3b1;
-  font-size: 0.8rem;
-  line-height: 1.6;
-}
-.setup-notice {
-  margin-top: 4rem;
-  max-width: 680px;
-}
-.setup-notice h1 {
-  color: var(--ink);
-  font-size: clamp(2rem, 6vw, 3.5rem);
-  letter-spacing: -0.06em;
-}
-.setup-notice code,
-.setup-notice pre,
-.setup-inline code {
-  color: var(--pink);
-  font: 0.72rem var(--mono);
-}
-.setup-notice pre {
-  padding: 0.8rem;
-  background: #090809;
-  border: 1px solid var(--line);
-  overflow: auto;
-}
 .error-message {
   color: #ffb0bf;
   border: 1px solid rgba(255, 145, 167, 0.35);

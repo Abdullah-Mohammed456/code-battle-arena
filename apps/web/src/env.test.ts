@@ -1,11 +1,12 @@
 import { expect, test } from "bun:test";
-import { envSchema } from "./env";
+import { envSchema, resolveWebEnv } from "./env";
 
-test("local development needs no credentials", () => {
-  expect(envSchema.parse({})).toEqual({
+test("only local development defaults to localhost", () => {
+  expect(resolveWebEnv({}, true)).toEqual({
     VITE_API_URL: "http://localhost:4000",
     VITE_WS_URL: "ws://localhost:4000/ws",
   });
+  expect(resolveWebEnv({}, false)).toEqual({});
 });
 
 test("rejects invalid API and socket destinations", () => {

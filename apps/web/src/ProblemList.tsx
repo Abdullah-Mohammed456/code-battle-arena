@@ -11,15 +11,7 @@ import { ArrowIcon } from "./ArrowIcon";
 
 type Problem = ReturnType<typeof problemListSchema.parse>["items"][number];
 
-export function ProblemList({
-  authConfigured = true,
-  api,
-  userId,
-}: {
-  authConfigured?: boolean;
-  api?: Api;
-  userId?: string;
-}) {
+export function ProblemList({ api, userId }: { api?: Api; userId?: string }) {
   const [params, setParams] = useSearchParams();
   const filterNames = [
     "query",
@@ -91,12 +83,6 @@ export function ProblemList({
           </p>
         </div>
       </section>
-      {!authConfigured && (
-        <div className="setup-inline">
-          Problem browsing is ready. To run solutions, add the Clerk publishable
-          key in <code>apps/web/.env</code>
-        </div>
-      )}
       <section className="index-layout" data-reveal>
         <div className="problem-column">
           <div className="list-heading">
