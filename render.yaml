@@ -3,7 +3,7 @@ services:
     name: code-battle-arena-api
     runtime: node
     plan: free
-    buildCommand: NODE_ENV=development npx --yes bun@1.4.0 install --frozen-lockfile && npx --yes bun@1.4.0 run build --filter=@repo/server...
+    buildCommand: bun install --frozen-lockfile && bun run build --filter=@repo/server...
     startCommand: node apps/server/dist/index.js
     healthCheckPath: /health
     autoDeployTrigger: checksPass
