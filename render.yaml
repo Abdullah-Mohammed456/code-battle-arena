@@ -25,6 +25,6 @@ services:
       - key: CLERK_SECRET_KEY
         sync: false
       - key: CORS_ORIGINS
-        sync: false
+        value: https://code-battle-arena-eg.vercel.app
       - key: JUDGE_ENABLED
         value: "false"
