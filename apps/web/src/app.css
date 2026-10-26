@@ -59,6 +59,29 @@
   border-color: #b94f69;
   opacity: 1;
 }
+.execution-notice {
+  border: 1px solid var(--pink);
+  background: rgba(255, 145, 167, 0.06);
+  padding: 1rem 1.2rem;
+}
+.execution-notice h3 {
+  margin: 0 0 0.5rem;
+  color: var(--pink);
+  font: 0.8rem var(--mono);
+  text-transform: uppercase;
+}
+.execution-notice p {
+  color: var(--ink);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.execution-notice button {
+  border: 1px solid var(--line);
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
 .workspace,
 .profile-page {
   max-width: 1320px;

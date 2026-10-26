@@ -42,6 +42,7 @@ export const envSchema = z
       .url()
       .refine((value) => httpUrl(value))
       .default("http://127.0.0.1:3001"),
+    JUDGE_ENABLED: z.stringbool().default(true),
     JUDGE_TIMEOUT_MS: z.coerce
       .number()
       .int()
@@ -66,7 +67,6 @@ export const envSchema = z
         "DATABASE_URL",
         "CLERK_PUBLISHABLE_KEY",
         "CLERK_SECRET_KEY",
-        "JUDGE_SECRET",
       ] as const)
         if (!value[field])
           ctx.addIssue({
@@ -74,13 +74,19 @@ export const envSchema = z
             path: [field],
             message: "Required in production",
           });
-      if (
-        value.CORS_ORIGINS.some((value) => !value.startsWith("https://")) ||
-        !value.JUDGE_URL.startsWith("https://")
-      )
+      if (value.CORS_ORIGINS.some((value) => !value.startsWith("https://")))
         ctx.addIssue({
           code: "custom",
           message: "Production origins and judge must use HTTPS",
+        });
+      if (
+        value.JUDGE_ENABLED &&
+        (!value.JUDGE_SECRET || !value.JUDGE_URL.startsWith("https://"))
+      )
+        ctx.addIssue({
+          code: "custom",
+          path: ["JUDGE_URL"],
+          message: "Enabled production judge requires an HTTPS URL and secret",
         });
     }
   });

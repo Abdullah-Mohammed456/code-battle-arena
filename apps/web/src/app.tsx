@@ -47,16 +47,7 @@ function PublicApp() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/problems" element={<ProblemList />} />
-        <Route
-          path="/problems/:slug"
-          element={
-            <WorkspaceRoute
-              api={async () => {
-                throw new Error("Sign-in is temporarily unavailable.");
-              }}
-            />
-          }
-        />
+        <Route path="/problems/:slug" element={<WorkspaceRoute />} />
         <Route path="/sign-in/*" element={<SetupNeeded />} />
         <Route path="/sign-up/*" element={<SetupNeeded />} />
         <Route path="*" element={<ProblemList />} />
@@ -106,7 +97,6 @@ function AuthenticatedApp() {
           path="/problems/:slug"
           element={
             <WorkspaceRoute
-              api={api}
               signedIn={Boolean(isSignedIn)}
               userId={userId ?? undefined}
             />

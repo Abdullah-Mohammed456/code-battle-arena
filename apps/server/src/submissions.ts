@@ -17,6 +17,7 @@ import { submissionStore } from "./db/queries/submissions.js";
 import { problemStore } from "./db/queries/problems.js";
 import type { authentication } from "./auth.js";
 import { runOnJudge } from "./services/judge.js";
+import { env } from "./env.js";
 import { ApiError } from "./errors.js";
 
 const slugSchema = z.string().regex(/^[a-z0-9-]{1,160}$/);
@@ -75,6 +76,7 @@ export function submissionRouter(
   connection: () => Database,
   auth: ReturnType<typeof authentication>,
   execute: Execute = runOnJudge,
+  executionEnabled = env.JUDGE_ENABLED,
 ) {
   const router = Router();
   const currentUser = async (db: Database, req: Request) => {
@@ -91,6 +93,12 @@ export function submissionRouter(
     rateLimitFor(auth, 20),
     async (req, res, next) => {
       try {
+        if (!executionEnabled)
+          throw new ApiError(
+            503,
+            "EXECUTION_UNAVAILABLE",
+            "Code execution is temporarily unavailable while we prepare the judge service.",
+          );
         const slug = parse(slugSchema, req.params.slug);
         const body = parse(runProblemSchema, req.body);
         const db = connection();
@@ -177,6 +185,12 @@ export function submissionRouter(
     rateLimitFor(auth, 6),
     async (req, res, next) => {
       try {
+        if (!executionEnabled)
+          throw new ApiError(
+            503,
+            "EXECUTION_UNAVAILABLE",
+            "Code execution is temporarily unavailable while we prepare the judge service.",
+          );
         const slug = parse(slugSchema, req.params.slug);
         const body = parse(submitProblemSchema, req.body);
         const db = connection();

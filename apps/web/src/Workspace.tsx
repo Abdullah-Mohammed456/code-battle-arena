@@ -1,29 +1,16 @@
 import { lazy, Suspense, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
-import {
-  problemDetailSchema,
-  problemRunResponseSchema,
-  submissionSchema,
-  type z,
-} from "@repo/shared";
-import { request, type Api } from "./api";
+import { problemDetailSchema } from "@repo/shared";
+import { request } from "./api";
 import { ErrorMessage } from "./ErrorMessage";
-import { Results } from "./Results";
 import { ArrowIcon } from "./ArrowIcon";
 import { readDraft, saveDraft } from "./draft";
 
 const CodeEditor = lazy(() => import("./CodeEditor"));
-type ExecutionResult =
-  z.infer<typeof problemRunResponseSchema> | z.infer<typeof submissionSchema>;
-
-export function WorkspaceRoute(props: {
-  api: Api;
-  signedIn?: boolean;
-  userId?: string;
-}) {
+export function WorkspaceRoute(props: { signedIn?: boolean; userId?: string }) {
   const { slug = "" } = useParams();
   return (
     <ProblemWorkspace key={`${props.userId ?? "guest"}:${slug}`} {...props} />
@@ -31,44 +18,22 @@ export function WorkspaceRoute(props: {
 }
 
 function ProblemWorkspace({
-  api,
   signedIn = false,
   userId,
 }: {
-  api: Api;
   signedIn?: boolean;
   userId?: string;
 }) {
   const { slug = "" } = useParams();
-  const queryClient = useQueryClient();
   const draftKey = `${userId ?? "guest"}:${slug}`;
   const [code, setCode] = useState(() => readDraft(draftKey));
   const [draftSaved, setDraftSaved] = useState(true);
   const [input, setInput] = useState("");
-  const [result, setResult] = useState<ExecutionResult>();
+  const [executionNotice, setExecutionNotice] = useState(false);
   const detail = useQuery({
     queryKey: ["problem", slug],
     queryFn: ({ signal }) =>
       request(`/api/problems/${slug}`, problemDetailSchema, { signal }),
-  });
-  const run = useMutation({
-    mutationFn: () =>
-      api(`/api/problems/${slug}/run`, problemRunResponseSchema, {
-        method: "POST",
-        body: JSON.stringify(input ? { code, input } : { code }),
-      }),
-    onSuccess: setResult,
-  });
-  const submit = useMutation({
-    mutationFn: () =>
-      api(`/api/problems/${slug}/submit`, submissionSchema, {
-        method: "POST",
-        body: JSON.stringify({ code }),
-      }),
-    onSuccess: (value) => {
-      setResult(value);
-      void queryClient.invalidateQueries({ queryKey: ["profile", userId] });
-    },
   });
   if (detail.isPending) return <p className="message">Loading problem…</p>;
   if (detail.isError) return <ErrorMessage error={detail.error} />;
@@ -79,18 +44,7 @@ function ProblemWorkspace({
       onKeyDownCapture={(event) => {
         if (!(event.ctrlKey || event.metaKey) || event.key !== "Enter") return;
         event.preventDefault();
-        if (!signedIn || run.isPending || submit.isPending) return;
-        if (event.shiftKey) {
-          if (problem.judgeable) {
-            setResult(undefined);
-            run.reset();
-            submit.mutate();
-          }
-        } else {
-          setResult(undefined);
-          submit.reset();
-          run.mutate();
-        }
+        setExecutionNotice(true);
       }}
     >
       <div className="workspace-heading" data-reveal>
@@ -155,9 +109,7 @@ function ProblemWorkspace({
         <section className="editor-panel" data-reveal>
           <div className="editor-toolbar">
             <span>C++17</span>
-            <span>
-              {problem.judgeable ? "READY TO SUBMIT" : "CATALOG ONLY"}
-            </span>
+            <span>EXECUTION PAUSED</span>
           </div>
           <Suspense fallback={<p className="message">Loading editor…</p>}>
             <CodeEditor
@@ -186,52 +138,32 @@ function ProblemWorkspace({
           {!signedIn && (
             <p>
               <Link className="source-link" to="/sign-in">
-                Sign in to run and submit your solution
+                Sign in to use your profile
               </Link>
             </p>
           )}
           <div className="editor-actions">
-            <button
-              disabled={!signedIn || run.isPending || submit.isPending}
-              onClick={() => {
-                setResult(undefined);
-                submit.reset();
-                run.mutate();
-              }}
-            >
-              {run.isPending
-                ? "Running…"
-                : signedIn
-                  ? input
-                    ? "Run custom input"
-                    : "Run samples"
-                  : "Sign in to run"}
+            <button onClick={() => setExecutionNotice(true)}>
+              {input ? "Run custom input" : "Run samples"}
             </button>
             <button
               className="submit-button"
-              disabled={
-                !signedIn ||
-                !problem.judgeable ||
-                run.isPending ||
-                submit.isPending
-              }
-              onClick={() => {
-                setResult(undefined);
-                run.reset();
-                submit.mutate();
-              }}
+              onClick={() => setExecutionNotice(true)}
             >
-              {submit.isPending
-                ? "Submitting…"
-                : signedIn
-                  ? "Submit solution"
-                  : "Sign in to submit"}
+              Submit solution
             </button>
           </div>
-          {(run.isError || submit.isError) && (
-            <ErrorMessage error={run.error ?? submit.error} />
+          {executionNotice && (
+            <div className="execution-notice" role="status">
+              <h3>Execution is temporarily unavailable</h3>
+              <p>
+                Sorry, we do not have a live judge service yet, so code cannot
+                be compiled or run. You can still browse problems and save a
+                draft in this browser.
+              </p>
+              <button onClick={() => setExecutionNotice(false)}>Close</button>
+            </div>
           )}
-          {result !== undefined && <Results value={result} />}
         </section>
       </div>
     </section>

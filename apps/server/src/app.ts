@@ -39,10 +39,14 @@ export function createApp(
   });
   const app = express();
   let database: ReturnType<typeof connectDatabase> | undefined;
-  const connection = () => options.database ?? (database ??= connectDatabase(config.DATABASE_URL));
+  const connection = () =>
+    options.database ?? (database ??= connectDatabase(config.DATABASE_URL));
   let importer: ReturnType<typeof importRunner> | undefined;
   const imports = () => (importer ??= importRunner(connection()));
-  app.locals.shutdown = async () => { await importer?.wait(); await database?.$disconnect(); };
+  app.locals.shutdown = async () => {
+    await importer?.wait();
+    await database?.$disconnect();
+  };
   app.disable("x-powered-by");
   app.set("trust proxy", config.TRUST_PROXY);
   app.use(
@@ -84,14 +88,16 @@ export function createApp(
       if (options.readiness) await options.readiness();
       else {
         await connection().$queryRaw`select 1`;
-        const response = await fetch(new URL("/ready", config.JUDGE_URL), {
-          signal: AbortSignal.timeout(5000),
-          redirect: "error",
-          headers: config.JUDGE_SECRET
-            ? { Authorization: `Bearer ${config.JUDGE_SECRET}` }
-            : {},
-        });
-        if (!response.ok) throw new Error("Judge unavailable");
+        if (config.JUDGE_ENABLED) {
+          const response = await fetch(new URL("/ready", config.JUDGE_URL), {
+            signal: AbortSignal.timeout(5000),
+            redirect: "error",
+            headers: config.JUDGE_SECRET
+              ? { Authorization: `Bearer ${config.JUDGE_SECRET}` }
+              : {},
+          });
+          if (!response.ok) throw new Error("Judge unavailable");
+        }
       }
       res.json({ status: "ok" });
     } catch {
@@ -112,7 +118,10 @@ export function createApp(
   app.use(express.json({ limit: "384kb" }));
   app.use("/api/problems", problemRouter(connection));
   app.use("/api", auth.middleware);
-  app.use("/api", submissionRouter(connection, auth, options.execute));
+  app.use(
+    "/api",
+    submissionRouter(connection, auth, options.execute, config.JUDGE_ENABLED),
+  );
   app.use("/api/admin", adminRouter(connection, auth, imports));
   app.get("/api/me", async (req, res, next) => {
     try {

@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: code-battle-arena-api
+    runtime: node
+    plan: free
+    buildCommand: NODE_ENV=development npx --yes bun@1.4.0 install --frozen-lockfile && npx --yes bun@1.4.0 run build --filter=@repo/server...
+    startCommand: node apps/server/dist/index.js
+    healthCheckPath: /health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "1"
+      - key: LOG_LEVEL
+        value: info
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_DIRECT_URL
+        sync: false
+      - key: CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: JUDGE_ENABLED
+        value: "false"
