@@ -43,5 +43,6 @@ markdown-files/
 *.md
 *.markdown
 docs/
+!README.md
 
 apps/server/src/generated/

@@ -24,7 +24,7 @@
     "test": "bun run db:generate && bun test src",
     "db:generate": "prisma generate",
     "db:migrate": "node --env-file-if-exists=.env ./node_modules/.bin/prisma migrate deploy",
-    "test:integration": "bun run db:generate && bun run db:migrate && RUN_DATABASE_TESTS=1 bun test src/db/*.integration.test.ts",
+    "test:integration": "bun run db:generate && node --input-type=module -e 'const url = process.env.TEST_DATABASE_URL; if (!url || ![\"localhost\", \"127.0.0.1\", \"::1\"].includes(new URL(url).hostname)) throw new Error(\"Integration tests require a dedicated local database\")' && DATABASE_DIRECT_URL=\"$TEST_DATABASE_URL\" bun run db:migrate && RUN_DATABASE_TESTS=1 bun test src/db/*.integration.test.ts",
     "db:migrate:dev": "node --env-file-if-exists=.env ./node_modules/.bin/prisma migrate dev",
     "import:problems": "node --env-file-if-exists=.env --import tsx src/importers/cli.ts"
   },
