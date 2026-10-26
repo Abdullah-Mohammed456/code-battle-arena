@@ -1,5 +1,6 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useClerk } from "@clerk/react";
 import {
   progressListSchema,
   submissionListSchema,
@@ -10,6 +11,7 @@ import type { Api } from "./api";
 import { ErrorMessage } from "./ErrorMessage";
 
 export function Profile({ api, userId }: { api: Api; userId: string }) {
+  const { openUserProfile, signOut } = useClerk();
   const [searchParams, setSearchParams] = useSearchParams();
   const parsed = submissionQuerySchema.safeParse({
     page: searchParams.get("page") ?? 1,
@@ -30,7 +32,13 @@ export function Profile({ api, userId }: { api: Api; userId: string }) {
   return (
     <section className="profile-page" data-reveal>
       <p className="eyebrow">YOUR ACCOUNT / PROGRESS</p>
-      <h1>{profile.data?.displayName ?? "Profile"}</h1>
+      <div className="profile-heading">
+        <h1>{profile.data?.displayName ?? "Profile"}</h1>
+        <div className="profile-actions">
+          <button onClick={() => openUserProfile()}>Manage account</button>
+          <button onClick={() => signOut()}>Sign out</button>
+        </div>
+      </div>
       {[profile, progress, submissions].some((item) => item.isError) && (
         <ErrorMessage
           error={profile.error ?? progress.error ?? submissions.error}

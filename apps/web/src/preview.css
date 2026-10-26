@@ -58,6 +58,25 @@ body.has-cursor [contenteditable="true"],
 body.has-cursor .cm-editor {
   cursor: text !important;
 }
+body.has-cursor .cl-rootBox,
+body.has-cursor .cl-rootBox *,
+body.has-cursor .cl-modalContent,
+body.has-cursor .cl-modalContent *,
+body.has-cursor .cl-userProfile-root,
+body.has-cursor .cl-userProfile-root * {
+  cursor: auto !important;
+}
+body.has-cursor .cl-rootBox a,
+body.has-cursor .cl-rootBox button,
+body.has-cursor .cl-rootBox [role="button"],
+body.has-cursor .cl-modalContent a,
+body.has-cursor .cl-modalContent button,
+body.has-cursor .cl-modalContent [role="button"],
+body.has-cursor .cl-userProfile-root a,
+body.has-cursor .cl-userProfile-root button,
+body.has-cursor .cl-userProfile-root [role="button"] {
+  cursor: pointer !important;
+}
 button,
 input {
   font: inherit;
@@ -651,6 +670,10 @@ body:not(.has-cursor) .cursor-dot {
   }
 }
 @media (max-width: 620px) {
+  .profile-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
   .topbar {
     height: 64px;
   }

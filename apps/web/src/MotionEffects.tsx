@@ -93,20 +93,21 @@ export function MotionEffects({
         });
         const onMove = (event: PointerEvent) => {
           const target = event.target;
-          const textField =
-            target instanceof Element &&
-            target.closest(
-              "input, textarea, select, [contenteditable='true'], .cm-editor",
-            );
-          dot.style.opacity = textField ? "0" : "1";
-          ring.style.opacity = textField ? "0" : "1";
+          const element = target instanceof Element ? target : null;
+          const clerkElement = element?.closest(
+            ".cl-rootBox, .cl-modalContent, .cl-userProfile-root",
+          );
+          const textField = element?.closest(
+            "input, textarea, select, [contenteditable='true'], .cm-editor",
+          );
+          dot.style.opacity = textField || clerkElement ? "0" : "1";
+          ring.style.opacity = textField || clerkElement ? "0" : "1";
           dotX(event.clientX);
           dotY(event.clientY);
           ringX(event.clientX);
           ringY(event.clientY);
-          const element = target instanceof Element ? target : null;
           ringScale(
-            element?.closest(".cl-rootBox")
+            clerkElement
               ? 1.8
               : element?.closest("a, button, [role='button']")
                 ? 1.6

@@ -5,6 +5,28 @@
   font-size: 0.75rem;
   color: var(--muted);
 }
+.account-avatar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--pink);
+}
+.account-avatar img {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  object-fit: cover;
+}
+.auth-switch {
+  margin: 1rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: center;
+}
+.auth-switch a {
+  color: var(--pink);
+}
 .sign-link,
 .source-link {
   display: inline-flex;
@@ -87,6 +109,30 @@
   max-width: 1320px;
   margin: 0 auto;
   padding: 3rem 0 5rem;
+}
+.profile-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.profile-heading h1 {
+  margin-bottom: 1rem;
+}
+.profile-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+.profile-actions button {
+  border: 1px solid var(--line);
+  padding: 0.65rem 0.8rem;
+  background: transparent;
+  color: var(--pink);
+  cursor: pointer;
+}
+.profile-actions button:hover {
+  border-color: var(--pink);
+  background: rgba(255, 145, 167, 0.08);
 }
 .workspace-heading {
   display: flex;

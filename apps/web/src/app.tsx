@@ -7,7 +7,7 @@ import {
   Routes,
   useLocation,
 } from "react-router-dom";
-import { SignIn, SignUp, UserButton, useAuth, useUser } from "@clerk/react";
+import { SignIn, SignUp, useAuth, useUser } from "@clerk/react";
 import { request, type Api } from "./api";
 import { clerkAppearance } from "./clerkAppearance";
 import { ProblemList } from "./ProblemList";
@@ -27,6 +27,11 @@ const Profile = lazy(() =>
 const Submission = lazy(() =>
   import("./Submission").then((module) => ({ default: module.Submission })),
 );
+const clerkAuthAppearance = {
+  ...clerkAppearance,
+  layout: { unsafe_disableDevelopmentModeWarnings: true },
+  elements: { ...clerkAppearance.elements, footer: { display: "none" } },
+};
 export function App() {
   return (
     <Suspense
@@ -81,6 +86,7 @@ function AuthenticatedApp() {
     <Shell
       signedIn={Boolean(isSignedIn)}
       userName={user?.firstName ?? undefined}
+      avatarUrl={user?.imageUrl}
     >
       <Routes>
         <Route path="/" element={<Landing signedIn={Boolean(isSignedIn)} />} />
@@ -106,7 +112,16 @@ function AuthenticatedApp() {
           path="/sign-in/*"
           element={
             <main className="auth-page">
-              <SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" />
+              <SignIn
+                routing="path"
+                path="/sign-in"
+                signUpUrl="/sign-up"
+                appearance={clerkAuthAppearance}
+              />
+              <p className="auth-switch">
+                New to Code Battle Arena?{" "}
+                <Link to="/sign-up">Create account</Link>
+              </p>
             </main>
           }
         />
@@ -114,7 +129,15 @@ function AuthenticatedApp() {
           path="/sign-up/*"
           element={
             <main className="auth-page">
-              <SignUp routing="path" path="/sign-up" signInUrl="/sign-in" />
+              <SignUp
+                routing="path"
+                path="/sign-up"
+                signInUrl="/sign-in"
+                appearance={clerkAuthAppearance}
+              />
+              <p className="auth-switch">
+                Already have an account? <Link to="/sign-in">Sign in</Link>
+              </p>
             </main>
           }
         />
@@ -156,10 +179,12 @@ function Shell({
   children,
   signedIn,
   userName,
+  avatarUrl,
 }: {
   children: React.ReactNode;
   signedIn?: boolean;
   userName?: string;
+  avatarUrl?: string;
 }) {
   const { pathname } = useLocation();
   const motionEnabled = !/^\/(problems\/[^/]+|battle\/[^/]+)$/.test(pathname);
@@ -185,11 +210,14 @@ function Shell({
         </nav>
         {signedIn ? (
           <div className="account">
-            <Link to="/profile">{userName ?? "Profile"}</Link>
-            <UserButton
-              appearance={clerkAppearance}
-              userProfileProps={{ appearance: clerkAppearance }}
-            />
+            <Link
+              className="account-avatar"
+              to="/profile"
+              aria-label="Open account profile"
+            >
+              <img src={avatarUrl} alt="" />
+              <span>{userName ?? "Profile"}</span>
+            </Link>
           </div>
         ) : (
           <Link className="sign-link" to="/sign-in">
