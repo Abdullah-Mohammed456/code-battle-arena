@@ -1,4 +1,5 @@
 export const clerkAppearance = {
+  layout: { unsafe_disableDevelopmentModeWarnings: true },
   variables: {
     colorBackground: "#151113",
     colorBorder: "#3b3034",
@@ -12,6 +13,7 @@ export const clerkAppearance = {
     borderRadius: "0.2rem",
   },
   elements: {
+    footer: { display: "none" },
     badge: {
       color: "#f0c3cc",
       backgroundColor: "#302329",

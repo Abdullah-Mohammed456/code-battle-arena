@@ -27,11 +27,6 @@ const Profile = lazy(() =>
 const Submission = lazy(() =>
   import("./Submission").then((module) => ({ default: module.Submission })),
 );
-const clerkAuthAppearance = {
-  ...clerkAppearance,
-  layout: { unsafe_disableDevelopmentModeWarnings: true },
-  elements: { ...clerkAppearance.elements, footer: { display: "none" } },
-};
 export function App() {
   return (
     <Suspense
@@ -116,7 +111,7 @@ function AuthenticatedApp() {
                 routing="path"
                 path="/sign-in"
                 signUpUrl="/sign-up"
-                appearance={clerkAuthAppearance}
+                appearance={clerkAppearance}
               />
               <p className="auth-switch">
                 New to Code Battle Arena?{" "}
@@ -133,7 +128,7 @@ function AuthenticatedApp() {
                 routing="path"
                 path="/sign-up"
                 signInUrl="/sign-in"
-                appearance={clerkAuthAppearance}
+                appearance={clerkAppearance}
               />
               <p className="auth-switch">
                 Already have an account? <Link to="/sign-in">Sign in</Link>
