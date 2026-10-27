@@ -149,7 +149,6 @@ Provision a separate Linux host with Docker and the required isolation controls,
 - **MVP limitation:** public execution is disabled until a separately hosted judge is available. Full M1 performance certification and the complete M5 accessibility/Lighthouse targets remain open.
 - **Not implemented:** live duels, matchmaking, spectators, group rooms, and leaderboard.
 
-Detailed milestone notes, internal documentation, and agent instructions stay local and are intentionally kept out of GitHub; this README is the public project overview.
 
 ## License and problem data
 
