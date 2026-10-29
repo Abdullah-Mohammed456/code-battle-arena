@@ -85,6 +85,10 @@ test("run requests are strict and hidden test results cannot contain outputs", (
       .success,
   ).toBe(true);
   expect(
+    submissionResultSchema.safeParse({ idx: 0, status: "WA", sample: false })
+      .success,
+  ).toBe(true);
+  expect(
     submissionResultSchema.safeParse({
       idx: 1,
       status: "WA",

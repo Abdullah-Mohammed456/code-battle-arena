@@ -27,7 +27,7 @@ export const submissionStatusSchema = z.enum([
 ]);
 export const submissionResultSchema = z
   .object({
-    idx: z.number().int().positive(),
+    idx: z.number().int().nonnegative(),
     status: submissionStatusSchema,
     timeMs: z.number().nonnegative().optional(),
     sample: z.boolean(),
