@@ -40,6 +40,15 @@ type StoredResult = {
   error?: string;
 };
 
+const displayResults = (results: unknown) =>
+  Array.isArray(results)
+    ? results.map((result, index) =>
+        result && typeof result === "object" && !Array.isArray(result)
+          ? { ...result, idx: index + 1 }
+          : result,
+      )
+    : results;
+
 function rateLimitFor(auth: ReturnType<typeof authentication>, limit: number) {
   return rateLimit({
     windowMs: 60000,
@@ -171,7 +180,7 @@ export function submissionRouter(
             passed: result.passedCount,
             total: result.totalCount,
             timeMs: results.reduce((sum, item) => sum + (item.timeMs ?? 0), 0),
-            results,
+            results: displayResults(results),
           });
         });
       } catch (error) {
@@ -261,7 +270,7 @@ export function submissionRouter(
             total: result.totalCount,
             timeMs,
             createdAt: submission.createdAt.toISOString(),
-            results,
+            results: displayResults(results),
           };
         });
       } catch (error) {
@@ -312,7 +321,7 @@ export function submissionRouter(
           total: row.total,
           timeMs: row.timeMs,
           createdAt: row.createdAt.toISOString(),
-          results: row.results,
+          results: displayResults(row.results),
         })),
         total,
         page: query.page,
@@ -340,7 +349,7 @@ export function submissionRouter(
         total: row.total,
         timeMs: row.timeMs,
         createdAt: row.createdAt.toISOString(),
-        results: row.results,
+        results: displayResults(row.results),
         code: row.code,
       });
     } catch (error) {

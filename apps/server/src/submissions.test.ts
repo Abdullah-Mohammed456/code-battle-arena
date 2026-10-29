@@ -2,6 +2,8 @@ import { expect, test } from "bun:test";
 import {
   z,
   submissionResultSchema,
+  submissionListSchema,
+  submissionDetailSchema,
   type ExecuteCodeResponse,
 } from "@repo/shared";
 import type { Database } from "./db/index.js";
@@ -19,9 +21,9 @@ const problem = {
   memoryLimitMb: 64,
   compareMode: "token",
   tests: [
-    { idx: 1, input: "1 2", expected: "3", isSample: true },
+    { idx: 0, input: "1 2", expected: "3", isSample: true },
     {
-      idx: 2,
+      idx: 1,
       input: "hidden input",
       expected: "hidden expected",
       isSample: false,
@@ -57,7 +59,7 @@ function fixture(
     timeMs: 6,
     results: [
       {
-        idx: 1,
+        idx: 0,
         status: "AC",
         timeMs: 3,
         sample: true,
@@ -262,24 +264,25 @@ test("history and detail are scoped to the signed-in user", async () => {
       `${url}/api/submissions?problem=cf-a-plus-b&page=1&limit=10`,
     );
     expect(response.status).toBe(200);
-    const list = (await response.json()) as {
-      items: Array<Record<string, unknown>>;
-    };
+    const list = submissionListSchema.parse(await response.json());
     expect(list.items[0]).not.toHaveProperty("code");
     expect(list.items[0]).toMatchObject({
       problemSlug: "cf-a-plus-b",
       status: "AC",
       total: 2,
     });
+    expect(list.items[0]?.results[0]?.idx).toBe(1);
     expect(historyQuery.list).toEqual({
       userId: uuid,
       problem: { slug: "cf-a-plus-b" },
     });
     const detail = await fetch(`${url}/api/submissions/${uuid}`);
-    expect(await detail.json()).toMatchObject({
+    const detailBody = submissionDetailSchema.parse(await detail.json());
+    expect(detailBody).toMatchObject({
       code: "int main() { return 0; }",
       problemSlug: "cf-a-plus-b",
     });
+    expect(detailBody.results[0]?.idx).toBe(1);
     expect(historyQuery.detail).toEqual({ id: uuid, userId: uuid });
     expect((await fetch(`${url}/api/submissions/not-an-id`)).status).toBe(400);
     expect((await fetch(`${url}/api/submissions?unexpected=yes`)).status).toBe(
